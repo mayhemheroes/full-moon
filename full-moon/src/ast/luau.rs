@@ -287,7 +287,7 @@ pub struct TypeField {
     pub(crate) access: Option<TokenReference>,
     pub(crate) key: TypeFieldKey,
     pub(crate) colon: TokenReference,
-    pub(crate) value: TypeInfo,
+    pub(crate) value: Box<TypeInfo>,
 }
 
 impl TypeField {
@@ -297,7 +297,7 @@ impl TypeField {
             access: None,
             key,
             colon: TokenReference::symbol(": ").unwrap(),
-            value,
+            value: Box::new(value),
         }
     }
 
@@ -341,7 +341,10 @@ impl TypeField {
 
     /// Returns a new TypeField with the `:` token
     pub fn with_value(self, value: TypeInfo) -> Self {
-        Self { value, ..self }
+        Self {
+            value: Box::new(value),
+            ..self
+        }
     }
 }
 
@@ -361,7 +364,7 @@ pub enum TypeFieldKey {
         brackets: ContainedSpan,
 
         /// The type for the index signature, `number` in `[number]`.
-        inner: TypeInfo,
+        inner: Box<TypeInfo>,
     },
 }
 
@@ -371,7 +374,7 @@ pub enum TypeFieldKey {
 #[display("{assertion_op}{cast_to}")]
 pub struct TypeAssertion {
     pub(crate) assertion_op: TokenReference,
-    pub(crate) cast_to: TypeInfo,
+    pub(crate) cast_to: Box<TypeInfo>,
 }
 
 impl TypeAssertion {
@@ -379,7 +382,7 @@ impl TypeAssertion {
     pub fn new(cast_to: TypeInfo) -> Self {
         Self {
             assertion_op: TokenReference::symbol("::").unwrap(),
-            cast_to,
+            cast_to: Box::new(cast_to),
         }
     }
 
@@ -403,7 +406,10 @@ impl TypeAssertion {
 
     /// Returns a new TypeAssertion with the given TypeInfo to cast to
     pub fn with_cast_to(self, cast_to: TypeInfo) -> Self {
-        Self { cast_to, ..self }
+        Self {
+            cast_to: Box::new(cast_to),
+            ..self
+        }
     }
 }
 
@@ -533,7 +539,7 @@ pub enum GenericParameterInfo {
 )]
 pub struct GenericDeclarationParameter {
     pub(crate) parameter: GenericParameterInfo,
-    pub(crate) default: Option<(TokenReference, TypeInfo)>,
+    pub(crate) default: Option<(TokenReference, Box<TypeInfo>)>,
 }
 
 impl GenericDeclarationParameter {
@@ -557,7 +563,9 @@ impl GenericDeclarationParameter {
 
     /// The default type, if present
     pub fn default_type(&self) -> Option<&TypeInfo> {
-        self.default.as_ref().map(|(_, default_type)| default_type)
+        self.default
+            .as_ref()
+            .map(|(_, default_type)| default_type.as_ref())
     }
 
     /// Returns a new GenericDeclarationParameter with the given parameter info
@@ -567,7 +575,10 @@ impl GenericDeclarationParameter {
 
     /// Returns a new GenericDeclarationParameter with the given default type
     pub fn with_default(self, default: Option<(TokenReference, TypeInfo)>) -> Self {
-        Self { default, ..self }
+        Self {
+            default: default.map(|(token, ty)| (token, Box::new(ty))),
+            ..self
+        }
     }
 }
 
@@ -626,7 +637,7 @@ impl Default for GenericDeclaration {
 #[display("{punctuation}{type_info}")]
 pub struct TypeSpecifier {
     pub(crate) punctuation: TokenReference,
-    pub(crate) type_info: TypeInfo,
+    pub(crate) type_info: Box<TypeInfo>,
 }
 
 impl TypeSpecifier {
@@ -634,7 +645,7 @@ impl TypeSpecifier {
     pub fn new(type_info: TypeInfo) -> Self {
         Self {
             punctuation: TokenReference::symbol(": ").unwrap(),
-            type_info,
+            type_info: Box::new(type_info),
         }
     }
 
@@ -659,7 +670,10 @@ impl TypeSpecifier {
 
     /// Returns a new TypeSpecifier with the given type being specified
     pub fn with_type_info(self, type_info: TypeInfo) -> Self {
-        Self { type_info, ..self }
+        Self {
+            type_info: Box::new(type_info),
+            ..self
+        }
     }
 }
 
@@ -668,7 +682,7 @@ impl TypeSpecifier {
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct TypeArgument {
     pub(crate) name: Option<(TokenReference, TokenReference)>,
-    pub(crate) type_info: TypeInfo,
+    pub(crate) type_info: Box<TypeInfo>,
 }
 
 impl TypeArgument {
@@ -676,7 +690,7 @@ impl TypeArgument {
     pub fn new(type_info: TypeInfo) -> Self {
         Self {
             name: None,
-            type_info,
+            type_info: Box::new(type_info),
         }
     }
 
@@ -697,7 +711,10 @@ impl TypeArgument {
 
     /// Returns a new TypeArgument with the given type info
     pub fn with_type_info(self, type_info: TypeInfo) -> Self {
-        Self { type_info, ..self }
+        Self {
+            type_info: Box::new(type_info),
+            ..self
+        }
     }
 }
 
@@ -772,12 +789,13 @@ pub struct TypeFunction {
     pub(crate) type_token: TokenReference,
     pub(crate) function_token: TokenReference,
     pub(crate) function_name: TokenReference,
-    pub(crate) function_body: FunctionBody,
+    pub(crate) function_body: Box<FunctionBody>,
 }
 
 impl TypeFunction {
     /// Creates a new TypeFunction from the given function name and body
     pub fn new(function_name: TokenReference, function_body: FunctionBody) -> Self {
+        let function_body = Box::new(function_body);
         Self {
             type_token: TokenReference::new(
                 Vec::new(),
@@ -836,7 +854,7 @@ impl TypeFunction {
     /// Returns a new TypeFunction with the given function body
     pub fn with_function_body(self, function_body: FunctionBody) -> Self {
         Self {
-            function_body,
+            function_body: Box::new(function_body),
             ..self
         }
     }
@@ -1019,7 +1037,7 @@ pub struct ConstFunction {
     pub(crate) const_token: TokenReference,
     pub(crate) function_token: TokenReference,
     pub(crate) name: TokenReference,
-    pub(crate) body: FunctionBody,
+    pub(crate) body: Box<FunctionBody>,
 }
 
 impl ConstFunction {
@@ -1036,7 +1054,7 @@ impl ConstFunction {
             ),
             function_token: TokenReference::basic_symbol("function "),
             name,
-            body: FunctionBody::new(),
+            body: Box::new(FunctionBody::new()),
         }
     }
 
@@ -1093,7 +1111,10 @@ impl ConstFunction {
 
     /// Returns a new ConstFunction with the given function body
     pub fn with_body(self, body: FunctionBody) -> Self {
-        Self { body, ..self }
+        Self {
+            body: Box::new(body),
+            ..self
+        }
     }
 }
 
@@ -1244,9 +1265,9 @@ impl IfExpression {
 #[display("{else_if_token}{condition}{then_token}{expression}")]
 pub struct ElseIfExpression {
     pub(crate) else_if_token: TokenReference,
-    pub(crate) condition: Expression,
+    pub(crate) condition: Box<Expression>,
     pub(crate) then_token: TokenReference,
-    pub(crate) expression: Expression,
+    pub(crate) expression: Box<Expression>,
 }
 
 impl ElseIfExpression {
@@ -1254,9 +1275,9 @@ impl ElseIfExpression {
     pub fn new(condition: Expression, expression: Expression) -> Self {
         Self {
             else_if_token: TokenReference::symbol(" elseif ").unwrap(),
-            condition,
+            condition: Box::new(condition),
             then_token: TokenReference::symbol(" then ").unwrap(),
-            expression,
+            expression: Box::new(expression),
         }
     }
 
@@ -1290,7 +1311,10 @@ impl ElseIfExpression {
 
     /// Returns a new ElseIfExpression with the given condition
     pub fn with_condition(self, condition: Expression) -> Self {
-        Self { condition, ..self }
+        Self {
+            condition: Box::new(condition),
+            ..self
+        }
     }
 
     /// Returns a new ElseIfExpression with the given `then` token
@@ -1300,7 +1324,10 @@ impl ElseIfExpression {
 
     /// Returns a new ElseIfExpression with the given expression
     pub fn with_block(self, expression: Expression) -> Self {
-        Self { expression, ..self }
+        Self {
+            expression: Box::new(expression),
+            ..self
+        }
     }
 }
 

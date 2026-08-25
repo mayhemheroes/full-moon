@@ -195,11 +195,11 @@ pub enum Field {
         /// The `[...]` part of `[expression] = value`
         brackets: ContainedSpan,
         /// The `expression` part of `[expression] = value`
-        key: Expression,
+        key: Box<Expression>,
         /// The `=` part of `[expression] = value`
         equal: TokenReference,
         /// The `value` part of `[expression] = value`
-        value: Expression,
+        value: Box<Expression>,
     },
 
     /// A key in the format of `name = value`
@@ -210,7 +210,7 @@ pub enum Field {
         /// The `=` part of `name = value`
         equal: TokenReference,
         /// The `value` part of `name = value`
-        value: Expression,
+        value: Box<Expression>,
     },
 
     /// A set constructor field, such as .a inside { .a } which is equivalent to { a = true }
@@ -291,7 +291,7 @@ pub struct AnonymousFunction {
     #[cfg(feature = "luau")]
     attributes: Vec<LuauAttribute>,
     function_token: TokenReference,
-    body: FunctionBody,
+    body: Box<FunctionBody>,
 }
 
 impl AnonymousFunction {
@@ -301,7 +301,7 @@ impl AnonymousFunction {
             #[cfg(feature = "luau")]
             attributes: Vec::new(),
             function_token: TokenReference::basic_symbol("function"),
-            body: FunctionBody::new(),
+            body: Box::new(FunctionBody::new()),
         }
     }
 
@@ -337,7 +337,10 @@ impl AnonymousFunction {
 
     /// Returns a new AnonymousFunction with the given function body
     pub fn with_body(self, body: FunctionBody) -> Self {
-        Self { body, ..self }
+        Self {
+            body: Box::new(body),
+            ..self
+        }
     }
 }
 
@@ -394,17 +397,17 @@ pub enum Expression {
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
     #[display("{_0}")]
-    IfExpression(IfExpression),
+    IfExpression(Box<IfExpression>),
 
     /// An interpolated string, such as `` `hello {"world"}` ``
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
     #[display("{_0}")]
-    InterpolatedString(InterpolatedString),
+    InterpolatedString(Box<InterpolatedString>),
 
     /// A table constructor, such as `{ 1, 2, 3 }`
     #[display("{_0}")]
-    TableConstructor(TableConstructor),
+    TableConstructor(Box<TableConstructor>),
 
     /// A number token, such as `3.3`
     #[display("{_0}")]
@@ -427,7 +430,7 @@ pub enum Expression {
         expression: Box<Expression>,
 
         /// The type assertion
-        type_assertion: TypeAssertion,
+        type_assertion: Box<TypeAssertion>,
     },
 
     /// A more complex value, such as `call().x`
@@ -445,40 +448,40 @@ pub enum Stmt {
     Assignment(Assignment),
     /// A do block, `do end`
     #[display("{_0}")]
-    Do(Do),
+    Do(Box<Do>),
     /// A function call on its own, such as `call()`
     #[display("{_0}")]
     FunctionCall(FunctionCall),
     /// A function declaration, such as `function x() end`
     #[display("{_0}")]
-    FunctionDeclaration(FunctionDeclaration),
+    FunctionDeclaration(Box<FunctionDeclaration>),
     /// A generic for loop, such as `for index, value in pairs(list) do end`
     #[display("{_0}")]
-    GenericFor(GenericFor),
+    GenericFor(Box<GenericFor>),
     /// An if statement
     #[display("{_0}")]
-    If(If),
+    If(Box<If>),
     /// A local assignment, such as `local x = 1`
     #[display("{_0}")]
     LocalAssignment(LocalAssignment),
     /// A local function declaration, such as `local function x() end`
     #[display("{_0}")]
-    LocalFunction(LocalFunction),
+    LocalFunction(Box<LocalFunction>),
     /// A numeric for loop, such as `for index = 1, 10 do end`
     #[display("{_0}")]
-    NumericFor(NumericFor),
+    NumericFor(Box<NumericFor>),
     /// A repeat loop
     #[display("{_0}")]
-    Repeat(Repeat),
+    Repeat(Box<Repeat>),
     /// A while loop
     #[display("{_0}")]
-    While(While),
+    While(Box<While>),
 
     /// A compound assignment, such as `+=`
     /// Only available when the "luau" feature flag is enabled
     #[cfg(any(feature = "luau", feature = "cfxlua"))]
     #[display("{_0}")]
-    CompoundAssignment(CompoundAssignment),
+    CompoundAssignment(Box<CompoundAssignment>),
     /// A const variable assignment, such as `const x = 1`
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
@@ -488,23 +491,23 @@ pub enum Stmt {
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
     #[display("{_0}")]
-    ConstFunction(ConstFunction),
+    ConstFunction(Box<ConstFunction>),
     /// An exported type declaration, such as `export type Meters = number`
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
-    ExportedTypeDeclaration(ExportedTypeDeclaration),
+    ExportedTypeDeclaration(Box<ExportedTypeDeclaration>),
     /// A type declaration, such as `type Meters = number`
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
-    TypeDeclaration(TypeDeclaration),
+    TypeDeclaration(Box<TypeDeclaration>),
     /// An exported type function, such as `export type function Pairs(...) end`
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
-    ExportedTypeFunction(ExportedTypeFunction),
+    ExportedTypeFunction(Box<ExportedTypeFunction>),
     /// A type function, such as `type function Pairs(...) end`
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
-    TypeFunction(TypeFunction),
+    TypeFunction(Box<TypeFunction>),
 
     /// A goto statement, such as `goto label`
     /// Only available when the "lua52" or "luajit" feature flag is enabled.
@@ -542,7 +545,7 @@ pub enum Index {
         /// The `[...]` part of `["y"]`
         brackets: ContainedSpan,
         /// The `"y"` part of `["y"]`
-        expression: Expression,
+        expression: Box<Expression>,
     },
 
     /// Indexing in the form of `x.y`
@@ -579,7 +582,7 @@ pub enum FunctionArgs {
     String(TokenReference),
     /// Used when a function is called in the form of `call { 1, 2, 3 }`
     #[display("{_0}")]
-    TableConstructor(TableConstructor),
+    TableConstructor(Box<TableConstructor>),
 }
 
 impl FunctionArgs {
@@ -602,17 +605,17 @@ pub struct NumericFor {
     for_token: TokenReference,
     index_variable: TokenReference,
     equal_token: TokenReference,
-    start: Expression,
+    start: Box<Expression>,
     start_end_comma: TokenReference,
-    end: Expression,
+    end: Box<Expression>,
     end_step_comma: Option<TokenReference>,
-    step: Option<Expression>,
+    step: Option<Box<Expression>>,
     do_token: TokenReference,
     block: Block,
     end_token: TokenReference,
     #[cfg(feature = "luau")]
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    type_specifier: Option<TypeSpecifier>,
+    type_specifier: Option<Box<TypeSpecifier>>,
 }
 
 impl NumericFor {
@@ -622,9 +625,9 @@ impl NumericFor {
             for_token: TokenReference::basic_symbol("for "),
             index_variable,
             equal_token: TokenReference::basic_symbol(" = "),
-            start,
+            start: Box::new(start),
             start_end_comma: TokenReference::basic_symbol(", "),
-            end,
+            end: Box::new(end),
             end_step_comma: None,
             step: None,
             do_token: TokenReference::basic_symbol(" do\n"),
@@ -655,6 +658,7 @@ impl NumericFor {
         &self.start
     }
 
+
     /// The comma in between the starting point and end point
     /// for _ = 1, 10 do
     ///          ^
@@ -667,6 +671,7 @@ impl NumericFor {
         &self.end
     }
 
+
     /// The comma in between the ending point and limit, if one exists
     /// for _ = 0, 10, 2 do
     ///              ^
@@ -676,7 +681,7 @@ impl NumericFor {
 
     /// The step if one exists, `2` in `for index = 0, 10, 2 do end`
     pub fn step(&self) -> Option<&Expression> {
-        self.step.as_ref()
+        self.step.as_deref()
     }
 
     /// The `do` token
@@ -700,7 +705,7 @@ impl NumericFor {
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
     pub fn type_specifier(&self) -> Option<&TypeSpecifier> {
-        self.type_specifier.as_ref()
+        self.type_specifier.as_deref()
     }
 
     /// Returns a new NumericFor with the given for token
@@ -726,7 +731,10 @@ impl NumericFor {
 
     /// Returns a new NumericFor with the given start expression
     pub fn with_start(self, start: Expression) -> Self {
-        Self { start, ..self }
+        Self {
+            start: Box::new(start),
+            ..self
+        }
     }
 
     /// Returns a new NumericFor with the given comma between the start and end expressions
@@ -739,7 +747,10 @@ impl NumericFor {
 
     /// Returns a new NumericFor with the given end expression
     pub fn with_end(self, end: Expression) -> Self {
-        Self { end, ..self }
+        Self {
+            end: Box::new(end),
+            ..self
+        }
     }
 
     /// Returns a new NumericFor with the given comma between the end and the step expressions
@@ -752,7 +763,10 @@ impl NumericFor {
 
     /// Returns a new NumericFor with the given step expression
     pub fn with_step(self, step: Option<Expression>) -> Self {
-        Self { step, ..self }
+        Self {
+            step: step.map(Box::new),
+            ..self
+        }
     }
 
     /// Returns a new NumericFor with the given `do` token
@@ -775,7 +789,7 @@ impl NumericFor {
     #[cfg(feature = "luau")]
     pub fn with_type_specifier(self, type_specifier: Option<TypeSpecifier>) -> Self {
         Self {
-            type_specifier,
+            type_specifier: type_specifier.map(Box::new),
             ..self
         }
     }
@@ -997,7 +1011,7 @@ impl fmt::Display for GenericFor {
 )]
 pub struct If {
     if_token: TokenReference,
-    condition: Expression,
+    condition: Box<Expression>,
     then_token: TokenReference,
     block: Block,
     else_if: Option<Vec<ElseIf>>,
@@ -1012,7 +1026,7 @@ impl If {
     pub fn new(condition: Expression) -> Self {
         Self {
             if_token: TokenReference::basic_symbol("if "),
-            condition,
+            condition: Box::new(condition),
             then_token: TokenReference::basic_symbol(" then"),
             block: Block::new(),
             else_if: None,
@@ -1071,7 +1085,10 @@ impl If {
 
     /// Returns a new If with the given condition
     pub fn with_condition(self, condition: Expression) -> Self {
-        Self { condition, ..self }
+        Self {
+            condition: Box::new(condition),
+            ..self
+        }
     }
 
     /// Returns a new If with the given `then` token
@@ -1177,7 +1194,7 @@ impl ElseIf {
 #[display("{while_token}{condition}{do_token}{block}{end_token}")]
 pub struct While {
     while_token: TokenReference,
-    condition: Expression,
+    condition: Box<Expression>,
     do_token: TokenReference,
     block: Block,
     end_token: TokenReference,
@@ -1188,7 +1205,7 @@ impl While {
     pub fn new(condition: Expression) -> Self {
         Self {
             while_token: TokenReference::basic_symbol("while "),
-            condition,
+            condition: Box::new(condition),
             do_token: TokenReference::basic_symbol(" do\n"),
             block: Block::new(),
             end_token: TokenReference::basic_symbol("end\n"),
@@ -1230,7 +1247,10 @@ impl While {
 
     /// Returns a new While with the given condition
     pub fn with_condition(self, condition: Expression) -> Self {
-        Self { condition, ..self }
+        Self {
+            condition: Box::new(condition),
+            ..self
+        }
     }
 
     /// Returns a new While with the given `do` token
@@ -1257,7 +1277,7 @@ pub struct Repeat {
     repeat_token: TokenReference,
     block: Block,
     until_token: TokenReference,
-    until: Expression,
+    until: Box<Expression>,
 }
 
 impl Repeat {
@@ -1267,7 +1287,7 @@ impl Repeat {
             repeat_token: TokenReference::basic_symbol("repeat\n"),
             block: Block::new(),
             until_token: TokenReference::basic_symbol("\nuntil "),
-            until,
+            until: Box::new(until),
         }
     }
 
@@ -1314,7 +1334,10 @@ impl Repeat {
 
     /// Returns a new Repeat with the given `until` block
     pub fn with_until(self, until: Expression) -> Self {
-        Self { until, ..self }
+        Self {
+            until: Box::new(until),
+            ..self
+        }
     }
 }
 
@@ -1327,9 +1350,9 @@ pub struct MethodCall {
 
     #[cfg(feature = "luau")]
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    type_instantiation: Option<TypeInstantiation>,
+    type_instantiation: Option<Box<TypeInstantiation>>,
 
-    args: FunctionArgs,
+    args: Box<FunctionArgs>,
 }
 
 impl MethodCall {
@@ -1338,7 +1361,7 @@ impl MethodCall {
         Self {
             colon_token: TokenReference::basic_symbol(":"),
             name,
-            args,
+            args: Box::new(args),
             #[cfg(feature = "luau")]
             type_instantiation: None,
         }
@@ -1364,7 +1387,7 @@ impl MethodCall {
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
     pub fn type_instantiation(&self) -> Option<&TypeInstantiation> {
-        self.type_instantiation.as_ref()
+        self.type_instantiation.as_deref()
     }
 
     /// Returns a new MethodCall with the given `:` token
@@ -1382,14 +1405,17 @@ impl MethodCall {
 
     /// Returns a new MethodCall with the given args
     pub fn with_args(self, args: FunctionArgs) -> Self {
-        Self { args, ..self }
+        Self {
+            args: Box::new(args),
+            ..self
+        }
     }
 
     /// Returns a new MethodCall with the given type instantiation.
     #[cfg(feature = "luau")]
     pub fn with_type_instanation(self, type_instantiation: Option<TypeInstantiation>) -> Self {
         Self {
-            type_instantiation,
+            type_instantiation: type_instantiation.map(Box::new),
             ..self
         }
     }
@@ -1417,10 +1443,10 @@ impl fmt::Display for MethodCall {
 pub enum Call {
     #[display("{_0}")]
     /// A function being called directly, such as `x(1)`
-    AnonymousCall(FunctionArgs),
+    AnonymousCall(Box<FunctionArgs>),
     #[display("{_0}")]
     /// A method call, such as `x:y()`
-    MethodCall(MethodCall),
+    MethodCall(Box<MethodCall>),
 }
 
 /// A function body, everything except `function x` in `function x(a, b, c) call() end`
@@ -1428,7 +1454,7 @@ pub enum Call {
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct FunctionBody {
     #[cfg(feature = "luau")]
-    generics: Option<GenericDeclaration>,
+    generics: Option<Box<GenericDeclaration>>,
 
     parameters_parentheses: ContainedSpan,
     parameters: Punctuated<Parameter>,
@@ -1438,7 +1464,7 @@ pub struct FunctionBody {
 
     #[cfg(feature = "luau")]
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-    return_type: Option<TypeSpecifier>,
+    return_type: Option<Box<TypeSpecifier>>,
 
     block: Block,
     end_token: TokenReference,
@@ -1493,7 +1519,7 @@ impl FunctionBody {
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
     pub fn generics(&self) -> Option<&GenericDeclaration> {
-        self.generics.as_ref()
+        self.generics.as_deref()
     }
 
     /// The type specifiers of the variables, in the order that they were assigned.
@@ -1509,7 +1535,7 @@ impl FunctionBody {
     /// Only available when the "luau" feature flag is enabled.
     #[cfg(feature = "luau")]
     pub fn return_type(&self) -> Option<&TypeSpecifier> {
-        self.return_type.as_ref()
+        self.return_type.as_deref()
     }
 
     /// Returns a new FunctionBody with the given parentheses for the parameters
@@ -1528,7 +1554,10 @@ impl FunctionBody {
     /// Returns a new FunctionBody with the given generics declaration
     #[cfg(feature = "luau")]
     pub fn with_generics(self, generics: Option<GenericDeclaration>) -> Self {
-        Self { generics, ..self }
+        Self {
+            generics: generics.map(Box::new),
+            ..self
+        }
     }
 
     /// Returns a new FunctionBody with the given type specifiers
@@ -1544,7 +1573,7 @@ impl FunctionBody {
     #[cfg(feature = "luau")]
     pub fn with_return_type(self, return_type: Option<TypeSpecifier>) -> Self {
         Self {
-            return_type,
+            return_type: return_type.map(Box::new),
             ..self
         }
     }
@@ -1624,7 +1653,7 @@ pub enum Suffix {
     #[display("{_0}")]
     #[cfg(feature = "luau")]
     /// A type instantiation, such as `a<<T>>`
-    TypeInstantiation(TypeInstantiation),
+    TypeInstantiation(Box<TypeInstantiation>),
 }
 
 /// A complex expression used by [`Var`], consisting of both a prefix and suffixes
@@ -1759,7 +1788,7 @@ pub struct LocalFunction {
     local_token: TokenReference,
     function_token: TokenReference,
     name: TokenReference,
-    body: FunctionBody,
+    body: Box<FunctionBody>,
 }
 
 impl LocalFunction {
@@ -1771,7 +1800,7 @@ impl LocalFunction {
             local_token: TokenReference::basic_symbol("local "),
             function_token: TokenReference::basic_symbol("function "),
             name,
-            body: FunctionBody::new(),
+            body: Box::new(FunctionBody::new()),
         }
     }
 
@@ -1830,7 +1859,10 @@ impl LocalFunction {
 
     /// Returns a new LocalFunction with the given function body
     pub fn with_body(self, body: FunctionBody) -> Self {
-        Self { body, ..self }
+        Self {
+            body: Box::new(body),
+            ..self
+        }
     }
 }
 
@@ -2048,7 +2080,7 @@ impl FunctionCall {
     pub fn new(prefix: Prefix) -> Self {
         FunctionCall {
             prefix,
-            suffixes: vec![Suffix::Call(Call::AnonymousCall(
+            suffixes: vec![Suffix::Call(Call::AnonymousCall(Box::new(
                 FunctionArgs::Parentheses {
                     arguments: Punctuated::new(),
                     parentheses: ContainedSpan::new(
@@ -2056,7 +2088,7 @@ impl FunctionCall {
                         TokenReference::basic_symbol(")"),
                     ),
                 },
-            ))],
+            )))],
         }
     }
 
@@ -2149,7 +2181,7 @@ pub struct FunctionDeclaration {
     attributes: Vec<LuauAttribute>,
     function_token: TokenReference,
     name: FunctionName,
-    body: FunctionBody,
+    body: Box<FunctionBody>,
 }
 
 impl FunctionDeclaration {
@@ -2160,7 +2192,7 @@ impl FunctionDeclaration {
             attributes: Vec::new(),
             function_token: TokenReference::basic_symbol("function "),
             name,
-            body: FunctionBody::new(),
+            body: Box::new(FunctionBody::new()),
         }
     }
 
@@ -2206,7 +2238,10 @@ impl FunctionDeclaration {
 
     /// Returns a new FunctionDeclaration with the given function body
     pub fn with_body(self, body: FunctionBody) -> Self {
-        Self { body, ..self }
+        Self {
+            body: Box::new(body),
+            ..self
+        }
     }
 }
 

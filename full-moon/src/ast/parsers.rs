@@ -128,11 +128,11 @@ fn parse_compound_assignment(state: &mut ParserState, var: Var) -> ParserResult<
     };
 
     ParserResult::Value(StmtVariant::Stmt(ast::Stmt::CompoundAssignment(
-        ast::CompoundAssignment {
+        Box::new(ast::CompoundAssignment {
             lhs: var,
             compound_operator: ast::CompoundOp::from_token(compound_operator),
             rhs: expr,
-        },
+        }),
     )))
 }
 
@@ -171,7 +171,9 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                             Err(()) => return ParserResult::LexerMoved,
                         };
 
-                    ParserResult::Value(StmtVariant::Stmt(ast::Stmt::LocalFunction(local_function)))
+                    ParserResult::Value(StmtVariant::Stmt(ast::Stmt::LocalFunction(
+                        Box::new(local_function),
+                    )))
                 }
 
                 _ => {
@@ -203,22 +205,22 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                 Err(()) => return ParserResult::LexerMoved,
             };
 
-            ParserResult::Value(StmtVariant::Stmt(ast::Stmt::Do(ast::Do {
+            ParserResult::Value(StmtVariant::Stmt(ast::Stmt::Do(Box::new(ast::Do {
                 do_token,
                 block,
                 end_token,
-            })))
+            }))))
         }
 
         TokenType::Symbol { symbol: Symbol::If } => {
             let if_token = state.consume().unwrap();
 
-            ParserResult::Value(StmtVariant::Stmt(ast::Stmt::If(
+            ParserResult::Value(StmtVariant::Stmt(ast::Stmt::If(Box::new(
                 match expect_if_stmt(state, if_token) {
                     Ok(if_stmt) => if_stmt,
                     Err(()) => return ParserResult::LexerMoved,
                 },
-            )))
+            ))))
         }
 
         TokenType::Symbol {
@@ -232,7 +234,7 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
             };
 
             ParserResult::Value(StmtVariant::Stmt(ast::Stmt::FunctionDeclaration(
-                function_declaration,
+                Box::new(function_declaration),
             )))
         }
 
@@ -254,12 +256,12 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
         } => {
             let while_token = state.consume().unwrap();
 
-            ParserResult::Value(StmtVariant::Stmt(ast::Stmt::While(
+            ParserResult::Value(StmtVariant::Stmt(ast::Stmt::While(Box::new(
                 match expect_while_stmt(state, while_token) {
                     Ok(while_stmt) => while_stmt,
                     Err(()) => return ParserResult::LexerMoved,
                 },
-            )))
+            ))))
         }
 
         TokenType::Symbol {
@@ -363,7 +365,7 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                                     if let Some(function_token) = state.consume_if(Symbol::Function)
                                     {
                                         return ParserResult::Value(StmtVariant::Stmt(
-                                            ast::Stmt::ExportedTypeFunction(
+                                            ast::Stmt::ExportedTypeFunction(Box::new(
                                                 ast::ExportedTypeFunction {
                                                     export_token,
                                                     type_function: match expect_type_function(
@@ -375,12 +377,12 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                                                         Err(()) => return ParserResult::LexerMoved,
                                                     },
                                                 },
-                                            ),
+                                            )),
                                         ));
                                     }
 
                                     return ParserResult::Value(StmtVariant::Stmt(
-                                        ast::Stmt::ExportedTypeDeclaration(
+                                        ast::Stmt::ExportedTypeDeclaration(Box::new(
                                             ast::ExportedTypeDeclaration {
                                                 export_token,
                                                 type_declaration: match expect_type_declaration(
@@ -390,7 +392,7 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                                                     Err(()) => return ParserResult::LexerMoved,
                                                 },
                                             },
-                                        ),
+                                        )),
                                     ));
                                 }
                                 TokenType::Identifier { identifier }
@@ -401,7 +403,7 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                                     if let Some(function_token) = state.consume_if(Symbol::Function)
                                     {
                                         return ParserResult::Value(StmtVariant::Stmt(
-                                            ast::Stmt::TypeFunction(
+                                            ast::Stmt::TypeFunction(Box::new(
                                                 match expect_type_function(
                                                     state,
                                                     type_token,
@@ -410,17 +412,17 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                                                     Ok(type_function) => type_function,
                                                     Err(()) => return ParserResult::LexerMoved,
                                                 },
-                                            ),
+                                            )),
                                         ));
                                     }
 
                                     return ParserResult::Value(StmtVariant::Stmt(
-                                        ast::Stmt::TypeDeclaration(
+                                        ast::Stmt::TypeDeclaration(Box::new(
                                             match expect_type_declaration(state, type_token) {
                                                 Ok(type_declaration) => type_declaration,
                                                 Err(()) => return ParserResult::LexerMoved,
                                             },
-                                        ),
+                                        )),
                                     ));
                                 }
                                 TokenType::Identifier { identifier }
@@ -470,7 +472,9 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                                                     Err(()) => return ParserResult::LexerMoved,
                                                 };
                                             return ParserResult::Value(StmtVariant::Stmt(
-                                                ast::Stmt::ConstFunction(const_function),
+                                                ast::Stmt::ConstFunction(Box::new(
+                                                    const_function,
+                                                )),
                                             ));
                                         }
 
@@ -683,7 +687,7 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                         };
 
                     ParserResult::Value(StmtVariant::Stmt(ast::Stmt::FunctionDeclaration(
-                        function_declaration.with_attributes(attributes),
+                        Box::new(function_declaration.with_attributes(attributes)),
                     )))
                 }
                 Ok(token) if token.is_symbol(Symbol::Local) => {
@@ -702,7 +706,7 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                             };
 
                             ParserResult::Value(StmtVariant::Stmt(ast::Stmt::LocalFunction(
-                                local_function.with_attributes(attributes),
+                                Box::new(local_function.with_attributes(attributes)),
                             )))
                         }
                         Ok(token) => {
@@ -732,7 +736,7 @@ fn parse_stmt(state: &mut ParserState) -> ParserResult<StmtVariant> {
                             };
 
                             ParserResult::Value(StmtVariant::Stmt(ast::Stmt::ConstFunction(
-                                const_function.with_attributes(attributes),
+                                Box::new(const_function.with_attributes(attributes)),
                             )))
                         }
                         Ok(token) => {
@@ -864,13 +868,13 @@ fn expect_function_declaration(
     };
 
     let function_body = match parse_function_body(state) {
-        ParserResult::Value(body) => body,
+        ParserResult::Value(body) => Box::new(body),
 
-        ParserResult::LexerMoved => ast::FunctionBody::new(),
+        ParserResult::LexerMoved => Box::new(ast::FunctionBody::new()),
 
         ParserResult::NotFound => {
             state.token_error(function_token.clone(), "expected a function body");
-            ast::FunctionBody::new()
+            Box::new(ast::FunctionBody::new())
         }
     };
 
@@ -900,7 +904,7 @@ fn expect_local_function_declaration(
     };
 
     let function_body = match parse_function_body(state) {
-        ParserResult::Value(function_body) => function_body,
+        ParserResult::Value(function_body) => Box::new(function_body),
         ParserResult::NotFound => {
             state.token_error(function_token, "expected a function body");
             return Err(());
@@ -936,11 +940,11 @@ fn expect_for_stmt(state: &mut ParserState, for_token: TokenReference) -> Result
     debug_assert!(!name_list.is_empty());
 
     if name_list.len() == 1 && current_token.is_symbol(Symbol::Equal) {
-        return Ok(ast::Stmt::NumericFor(expect_numeric_for_stmt(
+        return Ok(ast::Stmt::NumericFor(Box::new(expect_numeric_for_stmt(
             state,
             for_token,
             name_list.into_iter().next().unwrap(),
-        )?));
+        )?)));
     }
 
     let in_token = match current_token {
@@ -961,7 +965,7 @@ fn expect_for_stmt(state: &mut ParserState, for_token: TokenReference) -> Result
     };
 
     let Some(do_token) = state.require(Symbol::Do, "expected `do` after expression list") else {
-        return Ok(ast::Stmt::GenericFor(ast::GenericFor {
+        return Ok(ast::Stmt::GenericFor(Box::new(ast::GenericFor {
             for_token,
             names: name_list
                 .clone()
@@ -978,7 +982,7 @@ fn expect_for_stmt(state: &mut ParserState, for_token: TokenReference) -> Result
             do_token: TokenReference::basic_symbol("do"),
             block: ast::Block::new(),
             end_token: TokenReference::basic_symbol("end"),
-        }));
+        })));
     };
 
     let (block, end) = match expect_block_with_end(state, "for loop", &do_token) {
@@ -986,7 +990,7 @@ fn expect_for_stmt(state: &mut ParserState, for_token: TokenReference) -> Result
         Err(()) => (ast::Block::new(), TokenReference::basic_symbol("end")),
     };
 
-    Ok(ast::Stmt::GenericFor(ast::GenericFor {
+    Ok(ast::Stmt::GenericFor(Box::new(ast::GenericFor {
         for_token,
         names: name_list
             .clone()
@@ -1003,7 +1007,7 @@ fn expect_for_stmt(state: &mut ParserState, for_token: TokenReference) -> Result
         do_token,
         block,
         end_token: end,
-    }))
+    })))
 }
 
 fn expect_numeric_for_stmt(
@@ -1064,13 +1068,13 @@ fn expect_numeric_for_stmt(
         for_token,
         index_variable: index_variable.name,
         #[cfg(feature = "luau")]
-        type_specifier: index_variable.type_specifier,
+        type_specifier: index_variable.type_specifier.map(Box::new),
         equal_token,
-        start,
+        start: Box::new(start),
         start_end_comma,
-        end,
+        end: Box::new(end),
         end_step_comma,
-        step,
+        step: step.map(Box::new),
         do_token,
         block,
         end_token,
@@ -1188,7 +1192,7 @@ fn expect_if_stmt(state: &mut ParserState, if_token: TokenReference) -> Result<a
 
     Ok(ast::If {
         if_token,
-        condition,
+        condition: Box::new(condition),
         then_token,
         block: then_block,
         else_if: else_if_optional(else_if),
@@ -1380,7 +1384,7 @@ fn expect_const_function_declaration(
     };
 
     let function_body = match parse_function_body(state) {
-        ParserResult::Value(function_body) => function_body,
+        ParserResult::Value(function_body) => Box::new(function_body),
         ParserResult::NotFound => {
             state.token_error(function_token, "expected a function body");
             return Err(());
@@ -1455,9 +1459,9 @@ fn expect_expression_key(
 
     Ok(ast::Field::ExpressionKey {
         brackets: ContainedSpan::new(left_bracket, right_bracket),
-        key: expression,
+        key: Box::new(expression),
         equal: equal_token,
-        value,
+        value: Box::new(value),
     })
 }
 
@@ -1524,7 +1528,7 @@ fn force_table_constructor(
                 ast::Field::NameKey {
                     key,
                     equal: equal_token,
-                    value,
+                    value: Box::new(value),
                 }
             }
 
@@ -1628,7 +1632,7 @@ fn expect_repeat_stmt(
     };
 
     let Some(until_token) = state.require(Symbol::Until, "expected `until` after block") else {
-        return Ok(ast::Stmt::Do(ast::Do::new().with_block(block)));
+        return Ok(ast::Stmt::Do(Box::new(ast::Do::new().with_block(block))));
     };
 
     let condition = match parse_expression(state) {
@@ -1636,20 +1640,20 @@ fn expect_repeat_stmt(
 
         ParserResult::NotFound => {
             state.token_error(until_token, "expected a condition after `until`");
-            return Ok(ast::Stmt::Do(ast::Do::new().with_block(block)));
+            return Ok(ast::Stmt::Do(Box::new(ast::Do::new().with_block(block))));
         }
 
         ParserResult::LexerMoved => {
-            return Ok(ast::Stmt::Do(ast::Do::new().with_block(block)));
+            return Ok(ast::Stmt::Do(Box::new(ast::Do::new().with_block(block))));
         }
     };
 
-    Ok(ast::Stmt::Repeat(ast::Repeat {
+    Ok(ast::Stmt::Repeat(Box::new(ast::Repeat {
         repeat_token,
         block,
-        until: condition,
+        until: Box::new(condition),
         until_token,
-    }))
+    })))
 }
 
 fn expect_while_stmt(
@@ -1684,7 +1688,7 @@ fn expect_while_stmt(
 
     Ok(ast::While {
         while_token,
-        condition,
+        condition: Box::new(condition),
         do_token,
         block,
         end_token,
@@ -1746,7 +1750,7 @@ fn expect_type_function(
     };
 
     let function_body = match parse_function_body(state) {
-        ParserResult::Value(body) => body,
+        ParserResult::Value(body) => Box::new(body),
         ParserResult::LexerMoved => return Err(()),
         ParserResult::NotFound => {
             state.token_error(function_token, "expected a type function body");
@@ -1846,9 +1850,9 @@ fn parse_arguments(state: &mut ParserState) -> ParserResult<ast::FunctionArgs> {
         } => {
             let left_brace = state.consume().unwrap();
 
-            ParserResult::Value(ast::FunctionArgs::TableConstructor(
+            ParserResult::Value(ast::FunctionArgs::TableConstructor(Box::new(
                 force_table_constructor(state, left_brace),
-            ))
+            )))
         }
 
         TokenType::StringLiteral { .. } => {
@@ -1936,7 +1940,7 @@ fn parse_suffix(state: &mut ParserState) -> ParserResult<ast::Suffix> {
 
             ParserResult::Value(ast::Suffix::Index(ast::Index::Brackets {
                 brackets: ContainedSpan::new(left_bracket, right_bracket),
-                expression,
+                expression: Box::new(expression),
             }))
         }
 
@@ -1945,7 +1949,9 @@ fn parse_suffix(state: &mut ParserState) -> ParserResult<ast::Suffix> {
         }
         | TokenType::StringLiteral { .. } => {
             let arguments = try_parser!(parse_arguments(state)).unwrap();
-            ParserResult::Value(ast::Suffix::Call(ast::Call::AnonymousCall(arguments)))
+            ParserResult::Value(ast::Suffix::Call(ast::Call::AnonymousCall(Box::new(
+                arguments,
+            ))))
         }
 
         #[cfg(feature = "luau")]
@@ -1962,7 +1968,9 @@ fn parse_suffix(state: &mut ParserState) -> ParserResult<ast::Suffix> {
             let outer_0 = state.consume().unwrap();
             match expect_type_instantiation(state, outer_0) {
                 Ok(type_instantiation) => {
-                    ParserResult::Value(ast::Suffix::TypeInstantiation(type_instantiation))
+                    ParserResult::Value(ast::Suffix::TypeInstantiation(Box::new(
+                        type_instantiation,
+                    )))
                 }
 
                 Err(_) => ParserResult::LexerMoved,
@@ -1998,7 +2006,7 @@ fn parse_suffix(state: &mut ParserState) -> ParserResult<ast::Suffix> {
                     ) {
                         let outer_0 = state.consume().unwrap();
                         match expect_type_instantiation(state, outer_0) {
-                            Ok(instantiation) => Some(instantiation),
+                            Ok(instantiation) => Some(Box::new(instantiation)),
                             Err(()) => return ParserResult::LexerMoved,
                         }
                     } else {
@@ -2020,14 +2028,16 @@ fn parse_suffix(state: &mut ParserState) -> ParserResult<ast::Suffix> {
                 }
             };
 
-            ParserResult::Value(ast::Suffix::Call(ast::Call::MethodCall(ast::MethodCall {
-                colon_token,
-                name,
-                args,
+            ParserResult::Value(ast::Suffix::Call(ast::Call::MethodCall(Box::new(
+                ast::MethodCall {
+                    colon_token,
+                    name,
+                    args: Box::new(args),
 
-                #[cfg(feature = "luau")]
-                type_instantiation,
-            })))
+                    #[cfg(feature = "luau")]
+                    type_instantiation,
+                },
+            ))))
         }
 
         _ => ParserResult::NotFound,
@@ -2093,7 +2103,7 @@ fn parse_primary_expression(state: &mut ParserState) -> ParserResult<Expression>
                 Ok(token) if token.is_symbol(Symbol::Function) => {
                     let function_token = state.consume().unwrap();
                     let function_body = match parse_function_body(state) {
-                        ParserResult::Value(body) => body,
+                        ParserResult::Value(body) => Box::new(body),
                         ParserResult::LexerMoved => return ParserResult::LexerMoved,
                         ParserResult::NotFound => {
                             state.token_error(function_token, "expected a function body");
@@ -2121,7 +2131,7 @@ fn parse_primary_expression(state: &mut ParserState) -> ParserResult<Expression>
         } => {
             let function_token = state.consume().unwrap();
             let function_body = match parse_function_body(state) {
-                ParserResult::Value(body) => body,
+                ParserResult::Value(body) => Box::new(body),
                 ParserResult::LexerMoved => return ParserResult::LexerMoved,
                 ParserResult::NotFound => {
                     state.token_error(function_token, "expected a function body");
@@ -2202,8 +2212,8 @@ fn parse_primary_expression(state: &mut ParserState) -> ParserResult<Expression>
             symbol: Symbol::LeftBrace,
         } => {
             let left_brace = state.consume().unwrap();
-            ParserResult::Value(ast::Expression::TableConstructor(force_table_constructor(
-                state, left_brace,
+            ParserResult::Value(ast::Expression::TableConstructor(Box::new(
+                force_table_constructor(state, left_brace),
             )))
         }
 
@@ -2212,7 +2222,7 @@ fn parse_primary_expression(state: &mut ParserState) -> ParserResult<Expression>
             let if_token = state.consume().unwrap();
             match expect_if_else_expression(state, if_token) {
                 Ok(if_expression) => {
-                    ParserResult::Value(ast::Expression::IfExpression(if_expression))
+                    ParserResult::Value(ast::Expression::IfExpression(Box::new(if_expression)))
                 }
                 Err(_) => ParserResult::LexerMoved,
             }
@@ -2225,16 +2235,16 @@ fn parse_primary_expression(state: &mut ParserState) -> ParserResult<Expression>
 
             match kind {
                 InterpolatedStringKind::Simple => ParserResult::Value(
-                    ast::Expression::InterpolatedString(ast::InterpolatedString {
+                    ast::Expression::InterpolatedString(Box::new(ast::InterpolatedString {
                         segments: Vec::new(),
                         last_string: interpolated_string_begin,
-                    }),
+                    })),
                 ),
 
                 InterpolatedStringKind::Begin => {
-                    ParserResult::Value(ast::Expression::InterpolatedString(
+                    ParserResult::Value(ast::Expression::InterpolatedString(Box::new(
                         expect_interpolated_string(state, interpolated_string_begin),
-                    ))
+                    )))
                 }
 
                 _ => ParserResult::NotFound,
@@ -2254,10 +2264,10 @@ fn parse_primary_expression(state: &mut ParserState) -> ParserResult<Expression>
 
                 ParserResult::Value(ast::Expression::TypeAssertion {
                     expression: Box::new(expression),
-                    type_assertion: ast::TypeAssertion {
+                    type_assertion: Box::new(ast::TypeAssertion {
                         assertion_op,
-                        cast_to,
-                    },
+                        cast_to: Box::new(cast_to),
+                    }),
                 })
             } else {
                 ParserResult::Value(expression)
@@ -2402,7 +2412,7 @@ fn parse_function_body(state: &mut ParserState) -> ParserResult<FunctionBody> {
 
     #[cfg(feature = "luau")]
     let generics = match parse_generic_type_list(state, TypeListStyle::Plain) {
-        ParserResult::Value(generic_declaration) => Some(generic_declaration),
+        ParserResult::Value(generic_declaration) => Some(Box::new(generic_declaration)),
         ParserResult::NotFound => None,
         ParserResult::LexerMoved => return ParserResult::LexerMoved,
     };
@@ -2481,7 +2491,7 @@ fn parse_function_body(state: &mut ParserState) -> ParserResult<FunctionBody> {
 
                         Some(ast::TypeSpecifier {
                             punctuation: colon,
-                            type_info,
+                            type_info: Box::new(type_info),
                         })
                     } else {
                         None
@@ -2557,10 +2567,10 @@ fn parse_function_body(state: &mut ParserState) -> ParserResult<FunctionBody> {
     let return_type = if state.lua_version().has_luau() {
         if let Some(punctuation) = state.consume_if(Symbol::Colon) {
             match parse_return_type(state) {
-                ParserResult::Value(type_info) => Some(ast::TypeSpecifier {
+                ParserResult::Value(type_info) => Some(Box::new(ast::TypeSpecifier {
                     punctuation,
-                    type_info,
-                }),
+                    type_info: Box::new(type_info),
+                })),
                 _ => return ParserResult::LexerMoved,
             }
         } else if let Some(punctuation) = state.consume_if(Symbol::ThinArrow) {
@@ -2569,10 +2579,10 @@ fn parse_function_body(state: &mut ParserState) -> ParserResult<FunctionBody> {
                 "function return type annotations should use `:` instead of `->`",
             );
             match parse_return_type(state) {
-                ParserResult::Value(type_info) => Some(ast::TypeSpecifier {
+                ParserResult::Value(type_info) => Some(Box::new(ast::TypeSpecifier {
                     punctuation,
-                    type_info,
-                }),
+                    type_info: Box::new(type_info),
+                })),
                 _ => return ParserResult::LexerMoved,
             }
         } else {
@@ -2633,9 +2643,9 @@ fn expect_if_else_expression(
         };
         else_if_expressions.push(ast::ElseIfExpression {
             else_if_token,
-            condition,
+            condition: Box::new(condition),
             then_token,
-            expression,
+            expression: Box::new(expression),
         })
     }
 
@@ -3180,10 +3190,10 @@ fn expect_type_table(
                 access,
                 key: ast::TypeFieldKey::IndexSignature {
                     brackets: ContainedSpan::new(left_brace, right_brace),
-                    inner: ast::TypeInfo::String(property),
+                    inner: Box::new(ast::TypeInfo::String(property)),
                 },
                 colon,
-                value,
+                value: Box::new(value),
             }
         } else if current_token.is_symbol(Symbol::LeftBracket) {
             let left_brace = state.consume().unwrap();
@@ -3235,10 +3245,10 @@ fn expect_type_table(
                 access,
                 key: ast::TypeFieldKey::IndexSignature {
                     brackets: ContainedSpan::new(left_brace, right_brace),
-                    inner: key,
+                    inner: Box::new(key),
                 },
                 colon,
-                value,
+                value: Box::new(value),
             }
         } else if fields.is_empty()
             && !has_indexer
@@ -3284,7 +3294,7 @@ fn expect_type_table(
                         access,
                         key: ast::TypeFieldKey::Name(name.name),
                         colon,
-                        value,
+                        value: Box::new(value),
                     }
                 }
                 ParserResult::NotFound => break,
@@ -3352,7 +3362,7 @@ fn expect_function_type(
             ParserResult::Value(type_info) => {
                 arguments.push(Pair::End(ast::TypeArgument {
                     name: None,
-                    type_info,
+                    type_info: Box::new(type_info),
                 }));
                 break;
             }
@@ -3376,7 +3386,10 @@ fn expect_function_type(
             return Err(());
         };
 
-        let type_argument = ast::TypeArgument { name, type_info };
+        let type_argument = ast::TypeArgument {
+            name,
+            type_info: Box::new(type_info),
+        };
 
         if !matches!(state.current(), Ok(token) if token.is_symbol(Symbol::Comma)) {
             arguments.push(Pair::End(type_argument));
@@ -3414,7 +3427,7 @@ fn expect_function_type(
         // Simple type wrapped in parentheses (not allowed to be a vararg type), or an allowed type pack
         if (arguments.len() == 1
             && !matches!(
-                arguments.iter().next().unwrap().type_info,
+                *arguments.iter().next().unwrap().type_info,
                 ast::TypeInfo::Variadic { .. }
             ))
             || style == SimpleTypeStyle::AllowPack
@@ -3423,7 +3436,7 @@ fn expect_function_type(
                 parentheses,
                 types: arguments
                     .into_pairs()
-                    .map(|pair| pair.map(|argument| argument.type_info))
+                    .map(|pair| pair.map(|argument| *argument.type_info))
                     .collect(),
             });
         }
@@ -3463,7 +3476,7 @@ fn expect_type_specifier(
 
     Ok(ast::TypeSpecifier {
         punctuation,
-        type_info,
+        type_info: Box::new(type_info),
     })
 }
 
@@ -3558,7 +3571,7 @@ fn parse_generic_type_list(
                     ParserResult::LexerMoved => return ParserResult::LexerMoved,
                 };
 
-                Some((equal_token, default_type))
+                Some((equal_token, Box::new(default_type)))
             } else {
                 if seen_default {
                     state.token_error(
@@ -3585,7 +3598,7 @@ fn parse_generic_type_list(
                     _ => return ParserResult::LexerMoved,
                 };
 
-                Some((equal_token, default_type))
+                Some((equal_token, Box::new(default_type)))
             } else {
                 if seen_default {
                     state.token_error(
